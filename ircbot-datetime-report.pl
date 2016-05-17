@@ -31,12 +31,19 @@ sub irc_init {
             my ($self, $message) = @_;
             $CONTEXT->{errors}++;
             p($message);
+
+            Mojo::IOLoop->timer(
+                10, sub {
+                    $irc->connect(sub {});
+                }
+            );
         }) unless $irc->has_subscribers('error');
 
     $irc->on(
         irc_join => sub {
             my($self, $message) = @_;
             p($message);
+
         }) unless $irc->has_subscribers('irc_join');
 
     $irc->on(
@@ -59,6 +66,7 @@ sub irc_init {
 
     $irc->op_timeout(120);
     $irc->register_default_event_handlers;
+
     $irc->connect(sub {
                       my ($self, $err, $info) = @_;
                       if (!$err) {
@@ -68,13 +76,21 @@ sub irc_init {
                       }
                   });
 
+    Mojo::IOLoop->recurring(
+        600, sub {
+            my $text = "~~~ " . localtime . " ~~~";
+            $irc->write(PRIVMSG => $channel, ":$text\n", sub {});
+        }
+    );
+
     return $irc;
 }
 
 sub MAIN {
     my %args = @_;
 
-    $CONTEXT->{irc_bot}  //= irc_init($args{irc_nickname}, $args{irc_server}, $args{irc_channel});
+    $CONTEXT->{irc_bot} //= irc_init($args{irc_nickname}, $args{irc_server}, $args{irc_channel});
+
     Mojo::IOLoop->start;
 }
 
