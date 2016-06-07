@@ -14,6 +14,15 @@ use Mojo::IRC;
 use Mojo::IRC::UA;
 use IRC::Utils ();
 
+sub is_prime {
+    my $n = $_[0];
+    my $qn = sqrt($n);
+    for (my $i = 2; $i < $qn; $i++) {
+        return 0 if $n % $i == 0;
+    }
+    return 1;
+}
+
 my $CONTEXT = {};
 
 sub irc_init {
@@ -77,9 +86,16 @@ sub irc_init {
                   });
 
     Mojo::IOLoop->recurring(
-        600, sub {
-            my $text = "~~~ " . localtime . " ~~~";
-            $irc->write(PRIVMSG => $channel, ":$text\n", sub {});
+        1 , sub {
+            my $t = time;
+            my $text;
+            if (is_prime($t)) {
+                $text = "PRIME TIME: " . localtime($t) . " , epoch: $t";
+            }
+
+            if ($text) {
+                $irc->write(PRIVMSG => $channel, ":$text\n", sub {});
+            }
         }
     );
 
